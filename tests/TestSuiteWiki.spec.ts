@@ -9,56 +9,58 @@ test.describe('Wikipedia Watchlist Test', () => {
     const article1DisplayTitle = articleTitle1.replace(/_/g, ' '); // Title as displayed in watchlist (with spaces)
     const article2DisplayTitle = articleTitle2.replace(/_/g, ' '); // Title as displayed in watchlist (with spaces)
 
-    //create instance of page
-    let page: Page;
+    let page: Page; // Create instance of page
 
+    // Setup: Log in once before all tests
+    test.beforeAll(async ({ browser }) => {
+        // Read credentials from environment variables.
+        // Set WIKI_USERNAME and WIKI_PASSWORD before running the test.
+        const username = process.env.WIKI_USERNAME;
+        const password = process.env.WIKI_PASSWORD;
 
-    //Setup
-    test.beforeAll(async ({ browser }) => { 
-        const username = "Nicktest123"; //  username 
-        const password = "endpoint123"; //  password 
+        if (!username || !password) {
+            console.error('Error: WIKI_USERNAME and WIKI_PASSWORD environment variables must be set.');
+            test.fail();
+        }
 
         const context = await browser.newContext();
-        page = await context.newPage(); 
+        page = await context.newPage();
 
-        console.log('Logging in');
         await page.goto('https://en.wikipedia.org/wiki/Special:UserLogin');
 
         // Fill in username and password fields
         await page.locator('#wpName1').fill(username);
         await page.locator('#wpPassword1').fill(password);
 
-        console.log('Fill in Credentials');
-
         // Click the login button
         await page.locator('#wpLoginAttempt').click();
 
-        // Verify login success using the Watchlist link ID
+        // Verify login success by checking for an element that appears only after authentication
         const watchlistLinkAfterLogin = page.locator('#pt-watchlist-2');
 
         try {
-             await expect(watchlistLinkAfterLogin).toBeVisible({ timeout: 10000 }); // Keep a timeout for login verification
+             await expect(watchlistLinkAfterLogin).toBeVisible({ timeout: 10000 });
              console.log('Login successful');
-
         } catch (error) {
              console.error('Login failed:', error);
-             // Fail the suite if login fails
              test.fail();
         }
     });
 
+    // Teardown: Close the page and context after the suite
+    test.afterAll(async () => {
+        if (page) {
+            await page.context().close();
+            console.log('Browser closed.');
+        }
+    });
 
     // Test Case: Add, Remove, and Verify Watchlist Operations
     test('TC1', async () => {
         console.log('Starting test');
 
-        // Define selectors for watchlist items on EditWatchlist page 
-        const article1EditWatchlistItemSelector = `li:has-text("${article1DisplayTitle}")`;
-        const article2EditWatchlistItemSelector = `li:has-text("${article2DisplayTitle}")`;
-      
         // Define editWatchlistUrl here so it's accessible in the test function
         const editWatchlistUrl = 'https://en.wikipedia.org/wiki/Special:EditWatchlist';
-
 
         // --- Step 2: Add two pages to your watchlist ---
         const articleUrl1 = `https://en.wikipedia.org/wiki/${articleTitle1}`;
@@ -69,39 +71,29 @@ test.describe('Wikipedia Watchlist Test', () => {
         const watchButtonSelector = '#ca-watch';
         const watchLink1 = page.locator(watchButtonSelector);
 
-        // Check if the watch link is visible before clicking
-        if (await watchLink1.isVisible()) { 
+        if (await watchLink1.isVisible()) {
             await watchLink1.click();
-            console.log(`Clicked 'Watch' for ${articleTitle1}`);
-            // After clicking watch, the 'Unwatch' link should appear.
             await page.waitForSelector('#ca-unwatch', { state: 'visible' });
-            console.log(`Confirmed 'Unwatch' link is visible for ${article1DisplayTitle}`);
+            console.log(`Clicked 'Watch' for ${articleTitle1}`);
         } else {
-             console.log(`'Watch' link not visible for ${article1DisplayTitle}. Article might already be watched or selector changed.`);
              const unwatchLinkIfWatched = page.locator('#ca-unwatch');
              if (await unwatchLinkIfWatched.isVisible()) {
                  console.log(`'${article1DisplayTitle}' is already watched.`);
              } else {
                   console.log(`Neither 'Watch' nor 'Unwatch' link visible for ${article1DisplayTitle}.`);
-                
              }
         }
-
-
-        //Article 2
 
         const articleUrl2 = `https://en.wikipedia.org/wiki/${articleTitle2}`;
         await page.goto(articleUrl2);
         console.log(`Navigated to: ${articleTitle2}`);
-        const watchLink2 = page.locator(watchButtonSelector); 
-         if (await watchLink2.isVisible()) { 
+        const watchLink2 = page.locator(watchButtonSelector);
+         if (await watchLink2.isVisible()) {
             await watchLink2.click();
-            console.log(`Clicked 'Watch' for ${articleTitle2}`);
             await page.waitForSelector('#ca-unwatch', { state: 'visible' });
-             console.log(`Confirmed 'Unwatch' link is visible for ${article2DisplayTitle}`);
+             console.log(`Clicked 'Watch' for ${articleTitle2}`);
         } else {
-             console.log(`'Watch' link not visible for ${article2DisplayTitle}. Article might already be watched or selector changed.`);
-              const unwatchLinkIfWatched = page.locator('#ca-unwatch');
+             const unwatchLinkIfWatched = page.locator('#ca-unwatch');
              if (await unwatchLinkIfWatched.isVisible()) {
                  console.log(`'${article2DisplayTitle}' is already watched.`);
              } else {
@@ -115,86 +107,71 @@ test.describe('Wikipedia Watchlist Test', () => {
 
         // Verify both articles are present on the Edit Watchlist page after adding
         const pageBody = page.locator('body');
-        await expect(pageBody).toContainText(article1DisplayTitle, { timeout: 30000 }); // Verify The Matrix is present
-        await expect(pageBody).toContainText(article2DisplayTitle, { timeout: 30000 }); // Verify Keanu Reeves is present with a longer timeout
+        await expect(pageBody).toContainText(article1DisplayTitle, { timeout: 30000 });
+        await expect(pageBody).toContainText(article2DisplayTitle, { timeout: 30000 });
         console.log('Verified both articles are on Edit Watchlist page after adding.');
 
 
-        // --- Step 4: Removes first article from  watchlist 
+        // --- Step 4: Removes first article from watchlist
         console.log(`Attempting to remove ${article1DisplayTitle} from watchlist.`);
 
-        // Find the checkbox associated with the article title on the Edit Watchlist page using getByRole
-        // The accessible name includes the article title and "(talk | history)"
+        // Find the checkbox associated with the article title on the Edit Watchlist page
         const article1RemoveCheckbox = page.getByRole('checkbox', { name: `${article1DisplayTitle} (talk | history)` });
 
-        console.log(`Checking for checkbox with accessible name: "${article1DisplayTitle} (talk | history)"`);
-
-        // Check the checkbox to select the article for removal
-        await expect(article1RemoveCheckbox).toBeVisible(); // Ensure the checkbox is visible
-        await article1RemoveCheckbox.check(); // Click the checkbox
-        console.log(`Checked checkbox for ${article1DisplayTitle} on EditWatchlist.`);
+        await expect(article1RemoveCheckbox).toBeVisible();
+        await article1RemoveCheckbox.check();
 
         // Find and click the "Remove titles" button
-        // This button is typically near the bottom of the form.
-        const removeTitlesButtonSelector = 'button:has-text("Remove titles")'; // Selector for the remove button
-
-        const removeTitlesButton = page.locator(removeTitlesButtonSelector);
-        await expect(removeTitlesButton).toBeVisible(); // Ensure the button is visible
+        const removeTitlesButton = page.locator('button:has-text("Remove titles")');
+        await expect(removeTitlesButton).toBeVisible();
         await removeTitlesButton.click();
         console.log('Clicked "Remove titles" button.');
 
-        // After clicking remove, a confirmation message appears.
+        // Handle Removal Confirmation and navigate back to main Watchlist page
         const removalConfirmationMessage = page.locator('text=A single title was removed from your watchlist:');
-        await expect(removalConfirmationMessage).toBeVisible({ timeout: 10000 }); // Wait for the confirmation message to appear
-        console.log('Confirmed removal confirmation message is visible.');
+        await expect(removalConfirmationMessage).toBeVisible({ timeout: 10000 });
 
-        // Click the "Return to Special:Watchlist" link within the confirmation message
         const returnToWatchlistLink = page.getByRole('link', { name: 'Special:Watchlist' });
-        await expect(returnToWatchlistLink).toBeVisible(); // Ensure the link is visible
+        await expect(returnToWatchlistLink).toBeVisible();
         await returnToWatchlistLink.click();
-        console.log('Clicked "Return to Special:Watchlist" link.');
 
-        // Wait for the main Watchlist page to load after clicking the link
         await page.waitForURL('https://en.wikipedia.org/wiki/Special:Watchlist*');
         await page.waitForLoadState('networkidle');
         console.log('Navigated back to Special:Watchlist.');
 
-
-        // verify the article is not on the main watchlist page.
-        const pageBodyAfterNav = page.locator('body'); 
-        await expect(pageBodyAfterNav).not.toContainText(article1DisplayTitle, { timeout: 10000 }); // Verify The Matrix is not on the main watchlist page
+        // Verify the article is not on the main watchlist page.
+        const pageBodyAfterNav = page.locator('body');
+        await expect(pageBodyAfterNav).not.toContainText(article1DisplayTitle, { timeout: 10000 });
         console.log(`Verified ${article1DisplayTitle} is NOT present on main Watchlist page after removal.`);
 
 
-        // --- Step 5: Makes sure that the second article is still in the watchlist ---
+        // --- Step 5: Makes sure that the second article is still present in the watchlist ---
         await page.goto(editWatchlistUrl);
         console.log('Navigated back to Edit Watchlist page for Step 5 and 6.');
 
         console.log(`Checking if '${article2DisplayTitle}' is still present on EditWatchlist.`);
-        // Verify second article is still there 
-        await expect(pageBody).toContainText(article2DisplayTitle, { timeout: 10000 }); // Verify Keanu Reeves is still present
+        await expect(pageBody).toContainText(article2DisplayTitle, { timeout: 10000 });
         console.log(`Verification successful: '${article2DisplayTitle}' is still present on EditWatchlist.`);
 
-        // Optional: Verify the first article (The Matrix) is no longer present 
+        // Optional: Verify the first article (The Matrix) is no longer present
          await expect(pageBody).not.toContainText(article1DisplayTitle);
          console.log(`Verification successful: '${article1DisplayTitle}' is NOT present on EditWatchlist.`);
 
 
         // --- Step 6: Goes to the article in the watchlist (from EditWatchlist) ---
         console.log(`Attempting to navigate to ${article2DisplayTitle} from EditWatchlist.`);
-        
+
         // Find the link for the second article (Keanu Reeves) on the EditWatchlist page
         const article2EditWatchlistLink = page.getByRole('link', { name: article2DisplayTitle }).first();
 
 
         if (await article2EditWatchlistLink.count() > 0) {
-            await article2EditWatchlistLink.click(); // Click the link
+            await article2EditWatchlistLink.click();
             console.log(`Clicked link for ${articleTitle2} on EditWatchlist.`);
-            await page.waitForLoadState('networkidle'); // Wait for the article page to load
+            await page.waitForLoadState('networkidle');
         } else {
             console.log(`Link for ${article2DisplayTitle} not found on EditWatchlist.`);
-            // Fail the test if the link is not found
-            expect(true, `Link for ${article2DisplayTitle} should be found on the EditWatchlist`).toBe(false);
+            test.fail();
         }
 
         // Step 7: Verifies that the title of the second article matches the expected title ---
@@ -207,14 +184,12 @@ test.describe('Wikipedia Watchlist Test', () => {
 
         // --- Cleanup watchlist after the test ---
         console.log(`Starting cleanup for ${article2DisplayTitle}...`);
-        const editWatchlistUrlCleanup = 'https://en.wikipedia.org/wiki/Special:EditWatchlist'; // Use a different variable name for clarity
+        const editWatchlistUrlCleanup = 'https://en.wikipedia.org/wiki/Special:EditWatchlist';
 
         try {
-            // Navigate back to the Edit Watchlist page for cleanup
             await page.goto(editWatchlistUrlCleanup);
             console.log('Navigated to Edit Watchlist page for post-test cleanup.');
 
-            // Attempt to remove Keanu Reeves if present
             const article2RemoveCheckbox = page.getByRole('checkbox', { name: `${article2DisplayTitle} (talk | history)` });
             const removeTitlesButton = page.locator('button:has-text("Remove titles")');
 
@@ -227,13 +202,12 @@ test.describe('Wikipedia Watchlist Test', () => {
                 await expect(removalConfirmationMessage).toBeVisible({ timeout: 5000 });
                 console.log(`Removed '${article2DisplayTitle}'.`);
                 await expect(removalConfirmationMessage).toBeHidden({ timeout: 5000 });
-                await page.goto(editWatchlistUrlCleanup); // Navigate back to refresh the list
+                await page.goto(editWatchlistUrlCleanup);
             } else {
                 console.log(`'${article2DisplayTitle}' not found on watchlist during post-test cleanup, skipping removal.`);
             }
 
-            // Final check that Keanu Reeves is gone
-            const pageBodyCleanup = page.locator('body'); 
+            const pageBodyCleanup = page.locator('body');
             await expect(pageBodyCleanup).not.toContainText(article2DisplayTitle, { timeout: 5000 });
             console.log('Confirmed Keanu Reeves is removed.');
 
@@ -242,12 +216,5 @@ test.describe('Wikipedia Watchlist Test', () => {
         }
 
     });
-
-    // Teardown
-    test.afterAll(async () => {
-        if (page) {
-            await page.context().close();
-            console.log('Browser closed.');
-        }
-    });
 });
+
