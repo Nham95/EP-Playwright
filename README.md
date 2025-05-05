@@ -47,4 +47,7 @@ This script automates the following steps on Wikipedia using a single test case:
 8. Includes a cleanup step at the very end of the test to remove the second article ("Keanu Reeves") from the watchlist to ensure a clean state after the test runs.
 
 
-
+## Important
+ Set the Environment variable for the credentials before running the test.
+   export WIKI_USERNAME="YourWikipediaUsername"
+   export WIKI_PASSWORD="YourWikipediaPassword"
