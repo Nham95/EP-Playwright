@@ -55,14 +55,14 @@ test.describe('Wikipedia Watchlist Test', () => {
         }
     });
 
-    // Test Case: Add, Remove, and Verify Watchlist Operations
-    test('TC1', async () => {
+    // Test Case: Add, Remove, and Verify Watchlist
+    test('Add,Remove, and Verify Watchlist', async () => {
         console.log('Starting test');
 
-        // Define editWatchlistUrl here so it's accessible in the test function
+        // Define editWatchlistUrl 
         const editWatchlistUrl = 'https://en.wikipedia.org/wiki/Special:EditWatchlist';
 
-        // --- Step 2: Add two pages to your watchlist ---
+        // --- Step 2: Add two pages to watchlist ---
         const articleUrl1 = `https://en.wikipedia.org/wiki/${articleTitle1}`;
         await page.goto(articleUrl1);
         console.log(`Navigated to: ${articleTitle1}`);
@@ -153,12 +153,12 @@ test.describe('Wikipedia Watchlist Test', () => {
         await expect(pageBody).toContainText(article2DisplayTitle, { timeout: 10000 });
         console.log(`Verification successful: '${article2DisplayTitle}' is still present on EditWatchlist.`);
 
-        // Optional: Verify the first article (The Matrix) is no longer present
+        // Verify the first article (The Matrix) is no longer present
          await expect(pageBody).not.toContainText(article1DisplayTitle);
          console.log(`Verification successful: '${article1DisplayTitle}' is NOT present on EditWatchlist.`);
 
 
-        // --- Step 6: Goes to the article in the watchlist (from EditWatchlist) ---
+        // Step 6: Goes to the article in the watchlist
         console.log(`Attempting to navigate to ${article2DisplayTitle} from EditWatchlist.`);
 
         // Find the link for the second article (Keanu Reeves) on the EditWatchlist page
@@ -174,7 +174,7 @@ test.describe('Wikipedia Watchlist Test', () => {
             test.fail();
         }
 
-        // Step 7: Verifies that the title of the second article matches the expected title ---
+        // Step 7: Verifies that the title of the second article matches the expected title 
         console.log(`Matching page title '${article2DisplayTitle}'.`);
         const pageTitleElement = page.locator('#firstHeading');
         await expect(pageTitleElement).toHaveText(article2DisplayTitle);
@@ -182,7 +182,7 @@ test.describe('Wikipedia Watchlist Test', () => {
 
         console.log('Completed test successfully.');
 
-        // --- Cleanup watchlist after the test ---
+        // Cleanup watchlist after the test
         console.log(`Starting cleanup for ${article2DisplayTitle}...`);
         const editWatchlistUrlCleanup = 'https://en.wikipedia.org/wiki/Special:EditWatchlist';
 
