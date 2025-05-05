@@ -48,6 +48,6 @@ This script automates the following steps on Wikipedia using a single test case:
 
 
 ## Important
- Set the Environment variable for the credentials before running the test.
+ Set the Environment variable for the credentials before running the test in the terminal.
    export WIKI_USERNAME="YourWikipediaUsername"
    export WIKI_PASSWORD="YourWikipediaPassword"
