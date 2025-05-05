@@ -15,7 +15,7 @@
 
 ## A little bit about the code structure:
 
-For this assignment, I've implemented all the steps within a single test case (`TC1` in `TestSuiteWiki.spec.ts`) to keep the flow straightforward.
+For this assignment, I've implemented all the steps within a single test case to keep the flow straightforward.
 
 * The login happens once before the test suite starts using `beforeAll`.
 
@@ -51,3 +51,10 @@ This script automates the following steps on Wikipedia using a single test case:
  Set the Environment variable for the credentials before running the test in the terminal.
    export WIKI_USERNAME="YourWikipediaUsername"
    export WIKI_PASSWORD="YourWikipediaPassword"
+
+## Design Patterns and Test Data Management
+ I've kept the test logic within a single file for simplicity. However, in larger or more complex projects, I would implement design patterns like the Page Object Model (POM) to improve test maintainability, readability, and reusability by separating page interactions from test logic.
+
+I am also aware of the importance of separating test data (like credentials or article titles) from the test code itself for better flexibility and maintainability. In larger projects, I would manage this data using configuration files or dedicated data management approaches.
+
+I am comfortable implementing these patterns and practices in future projects to build more robust and scalable test automation frameworks.
